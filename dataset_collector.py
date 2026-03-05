@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import csv
 
-gesture_label = input("Enter gesture name: ")
+gesture_label = input("Enter any gesture name: ")
 
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands()
