@@ -4,18 +4,14 @@ import time
 from gesture_predictor import predict_gesture
 from text_to_speech import speak
 
-# Initialize MediaPipe
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands()
 
-mp_draw = mp.solutions.drawing_utils
-
-# Start webcam
 cap = cv2.VideoCapture(0)
 
 previous_gesture = ""
 last_time = 0
-cooldown = 0.7
+cooldown = 0.7  # seconds
 
 while True:
 
@@ -25,8 +21,6 @@ while True:
 
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = hands.process(rgb)
-
-    gesture = ""
 
     if results.multi_hand_landmarks:
 
@@ -43,6 +37,8 @@ while True:
 
             current_time = time.time()
 
+            # Allow different gestures immediately
+            # Allow same gesture after cooldown
             if gesture != previous_gesture or current_time - last_time > cooldown:
 
                 print("Gesture:", gesture)
@@ -51,24 +47,14 @@ while True:
                 previous_gesture = gesture
                 last_time = current_time
 
-            # Draw hand landmarks
-            mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-
-    # Display gesture text
-    cv2.putText(
-        frame, f"Gesture: {gesture}", (50, 70), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 2
-    )
-
-    # Project title
-    cv2.putText(
-        frame, "GestureBridge AI", (20, 450), cv2.FONT_HERSHEY_DUPLEX, 0.7, (0, 0, 0), 2
-    )
+            cv2.putText(
+                frame, gesture, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2
+            )
 
     cv2.imshow("GestureBridge", frame)
 
     if cv2.waitKey(1) & 0xFF == 27:
         break
-
 
 cap.release()
 cv2.destroyAllWindows()
