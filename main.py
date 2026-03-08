@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+import time
 from gesture_predictor import predict_gesture
 from text_to_speech import speak
 
@@ -13,14 +14,16 @@ hands = mp_hands.Hands(
 
 mp_draw = mp.solutions.drawing_utils
 
-# Start webcam
 cap = cv2.VideoCapture(0)
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-cap.set(cv2.CAP_PROP_FPS, 30)
 
 previous_gesture = ""
+gesture = ""
+
+gesture_start_time = None
+GESTURE_HOLD_TIME = 1.0   # seconds
 
 while True:
 
@@ -31,7 +34,7 @@ while True:
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = hands.process(rgb)
 
-    gesture = ""
+    detected_gesture = ""
 
     if results.multi_hand_landmarks:
 
@@ -40,29 +43,42 @@ while True:
             landmark_list = []
 
             for lm in hand_landmarks.landmark:
-                landmark_list.append(lm.x)
-                landmark_list.append(lm.y)
-                landmark_list.append(lm.z)
+                landmark_list.extend([lm.x, lm.y, lm.z])
 
             # Predict gesture
-            gesture = predict_gesture(landmark_list)
+            detected_gesture = predict_gesture(landmark_list)
 
-            # Speak only when gesture changes
-            if gesture != previous_gesture and gesture != "":
-
-                print("Gesture:", gesture)
-                speak(gesture)
-
-                previous_gesture = gesture
-
-            # Draw hand landmarks
+            # Draw landmarks
             mp_draw.draw_landmarks(
                 frame,
                 hand_landmarks,
                 mp_hands.HAND_CONNECTIONS
             )
 
-    # Display gesture text
+    # Start timer when gesture appears
+    if detected_gesture != "":
+        if gesture_start_time is None:
+            gesture_start_time = time.time()
+
+        elapsed_time = time.time() - gesture_start_time
+
+        # If gesture held long enough
+        if elapsed_time > GESTURE_HOLD_TIME:
+
+            gesture = detected_gesture
+
+            if gesture != previous_gesture:
+                print("Gesture:", gesture)
+                speak(gesture)
+
+                previous_gesture = gesture
+
+            gesture_start_time = None
+
+    else:
+        gesture_start_time = None
+
+    # Display gesture
     cv2.putText(
         frame,
         f"Gesture: {gesture}",
@@ -73,7 +89,6 @@ while True:
         2
     )
 
-    # Project title
     cv2.putText(
         frame,
         "GestureBridge AI",
