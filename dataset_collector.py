@@ -5,7 +5,13 @@ import csv
 gesture_label = input("Enter any gesture name: ")
 
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands()
+hands = mp_hands.Hands(
+    max_num_hands=1,
+    min_detection_confidence=0.7,
+    min_tracking_confidence=0.7
+)
+
+mp_draw = mp.solutions.drawing_utils
 
 cap = cv2.VideoCapture(0)
 
@@ -36,6 +42,13 @@ while True:
             writer.writerow(landmark_list)
 
             print("Sample collected")
+
+            # 🔹 Draw hand skeleton
+            mp_draw.draw_landmarks(
+                frame,
+                hand_landmarks,
+                mp_hands.HAND_CONNECTIONS
+            )
 
     cv2.imshow("Dataset Collection", frame)
 
